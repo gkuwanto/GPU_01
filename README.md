@@ -90,7 +90,7 @@ data[1 + threadIdx.x + blockSize.x * threadIdx.y] = 1.0;
 
 **Answer:** [write your answer here]
 
-## Q4: Matrix transpose optimization (65 points)
+## Q4: Matrix transpose optimization
 
 Optimize the CUDA matrix transpose implementations in transpose_device.cu. Read ALL of the TODO comments. Matrix transpose is a common exercise in GPU optimization, so do not search for existing GPU matrix transpose code on the Internet.
 
