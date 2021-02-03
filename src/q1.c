@@ -4,7 +4,9 @@ Creates an integer pointer, sets the value to which it points to 3, adds 2 to
 this value, and prints said value. */
 
 void test1() {
-    int *a = 3;
+    // When declaring a pointer, = is for a point in memory, not the value
+    int *a = (int *)malloc(sizeof(int));
+    *a = 3;
     *a = *a + 2;
     printf("%d\n", *a);
 }
@@ -16,7 +18,7 @@ Creates two integer pointers and sets the values to which they point to 2 and 3,
 respectively. */
 
 void test2() {
-    int *a, b;
+    int *a, *b; //When declaring a pointer, each variable needs the * before it.
     a = (int *) malloc(sizeof (int));
     b = (int *) malloc(sizeof (int));
 
@@ -35,7 +37,8 @@ Allocates an array of 1000 integers, and for i = 0, ..., 999, sets the i-th
 element to i. */
 
 void test3() {
-    int i, *a = (int *) malloc(1000);
+    // 1000 is not for the number of elements, but the size
+    int i, *a = (int *) malloc(1000*sizeof(int));
 
     if (!a) {
         printf("Out of memory\n");
@@ -53,6 +56,9 @@ from 0) to 5. */
 
 void test4() {
     int **a = (int **) malloc(3 * sizeof (int *));
+    // need to allocate memory for each row
+    for (int i = 0; i<3; i++)
+        a[i] = (int *) malloc(100 * sizeof(int));
     a[1][1] = 5;
 }
 
@@ -65,6 +71,6 @@ is 0, and prints a message if it is. */
 void test5() {
     int *a = (int *) malloc(sizeof (int));
     scanf("%d", a);
-    if (!a)
+    if (!*a) // was checking the pointer not the value
         printf("Value is 0\n");
 }
