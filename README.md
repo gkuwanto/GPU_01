@@ -25,8 +25,7 @@ y_2[n] = y_2[n - 2] + y_2[n - 1] + x[n]
 
 Which calculation do you expect will have an easier and faster implementation on the GPU, and why?
 
-**Answer:** [write your answer here]
-
+**Answer:** Calculation of y_1 is faster because it doesn't rely on itself, hence it can be easier to implement on the GPU. While y_2 needs to wait for previous array elements to calculate it, although we can optimize the code for y_2, it won't be as fast and easy as y_1.
 
 ## Q3: CUDA memory
 
