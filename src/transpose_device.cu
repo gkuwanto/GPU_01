@@ -57,20 +57,19 @@ void shmemTransposeKernel(const float *input, float *output, int n) {
     __shared__ float s_input[64*16]; // the number of thread's per block
     
     const int i = threadIdx.x + 64 * blockIdx.x;
-    int j = 4 * threadIdx.y + 64 * blockIdx.y;
-    const int tid_x = threadIdx.x;
-    const int tid_y = threadIdx.y;
-    s_input[tid_x + 64 * tid_y] = input[i + n * j];
-    s_input[tid_x + 64 * tid_y+16] = input[i + n * (j+16)];
-    s_input[tid_x + 64 * tid_y+32] = input[i + n * (j+32)];
-    s_input[tid_x + 64 * tid_y+48] = input[i + n * (j+48)];
+    const int j = threadIdx.y + 64 * blockIdx.y;
+
+    s_input[threadIdx.x + 64 * threadIdx.y] = input[i + n * j];
+    s_input[threadIdx.x + 64 * threadIdx.y+16] = input[i + n * (j+16)];
+    s_input[threadIdx.x + 64 * threadIdx.y+32] = input[i + n * (j+32)];
+    s_input[threadIdx.x + 64 * threadIdx.y+48] = input[i + n * (j+48)];
     __syncthreads();
 
 
-    output[(j)*n + i] = s_input[tid_y + 64 * (tid_x)];
-    output[(j+16)*n + i] = s_input[tid_y+16 + 64 * (tid_x)];
-    output[(j+32)*n + i] = s_input[tid_y+32 + 64 * (tid_x)];
-    output[(j+48)*n + i] = s_input[tid_y+48 + 64 * (tid_x)];
+    output[(i)*n + j] = s_input[threadIdx.y + 64 * (threadIdx.x)];
+    output[(i+16)*n + j] = s_input[threadIdx.y+16 + 64 * (threadIdx.x)];
+    output[(i+32)*n + j] = s_input[threadIdx.y+32 + 64 * (threadIdx.x)];
+    output[(i+48)*n + j] = s_input[threadIdx.y+48 + 64 * (threadIdx.x)];
 
     
 }
