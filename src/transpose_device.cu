@@ -54,14 +54,13 @@ void shmemTransposeKernel(const float *input, float *output, int n) {
     // padding). Again, comment on all sub-optimal accesses.
 
     // __shared__ float data[???];
-    __shared__ float tile[64*65];
+    __shared__ float tile[64][64+1];
     
     int x = blockIdx.x * 64 + threadIdx.x;
     int y = blockIdx.y * 64 + threadIdx.y;
-    int width = gridDim.x * 64;
   
     for (int j = 0; j < 64; j += 16)
-       tile[64*(threadIdx.y+j)+threadIdx.x] = input[(y+j)*width + x];
+       tile[threadIdx.y+j][threadIdx.x] = input[(y+j)*n + x];
   
     __syncthreads();
   
@@ -69,7 +68,7 @@ void shmemTransposeKernel(const float *input, float *output, int n) {
     y = blockIdx.x * 64 + threadIdx.y;
   
     for (int j = 0; j < 64; j += 16)
-       output[(y+j)*width + x] = tile[64 * threadIdx.x + threadIdx.y + j];
+       output[(y+j)*n + x] = tile[threadIdx.x][threadIdx.y + j];
 }
 
 __global__
