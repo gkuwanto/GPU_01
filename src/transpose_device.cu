@@ -54,22 +54,21 @@ void shmemTransposeKernel(const float *input, float *output, int n) {
     // padding). Again, comment on all sub-optimal accesses.
 
     // __shared__ float data[???];
-    __shared__ float s_input[64][65]; // the number of thread's per block
-
-    int i = threadIdx.x + 64 * blockIdx.x;
-    int j = threadIdx.y + 64 * blockIdx.y;
-    //copy from input
-    for (int k = 0; k < 64; k+=16) //loops can be unrolled
-        s_input[threadIdx.y+k][threadIdx.x] = input[i + n * (j+k)];
+    __shared__ float input[64][64+1];
+    
+    int i = blockIdx.x * 64 + threadIdx.x;
+    int j = blockIdx.y * 64 + threadIdx.y;
+  
+    for (int k = 0; k < 64; k += 16)
+       tile[threadIdx.y+k][threadIdx.x] = input[(j+k)*n + i];
+  
     __syncthreads();
-
-    // rearange index (transpose 64 by 64 block)
-    i = threadIdx.y + 64 * blockIdx.x;
-    j = threadIdx.x + 64 * blockIdx.y;
-
-    //copy to output
-    for (int k = 0; k < 64; k+=16) //loops can be unrolled
-        output[i + n * (j+k)] = s_input[threadIdx.x][threadIdx.y];
+  
+    i = blockIdx.y * 64 + threadIdx.x;  // transpose block offset
+    j = blockIdx.x * 64 + threadIdx.y;
+  
+    for (int k = 0; k < 64; k += 16)
+       output[(j+k)*n + i] = tile[threadIdx.x][threadIdx.y + k];
 }
 
 __global__
