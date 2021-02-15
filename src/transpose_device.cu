@@ -77,20 +77,25 @@ void optimalTransposeKernel(const float *input, float *output, int n) {
     // Use any optimization tricks discussed so far to improve performance.
     // Consider ILP and loop unrolling.
 
-    __shared__ float s_input[64*65]; // the number of thread's per block
-
-    const int i = threadIdx.x + 64 * blockIdx.x;
-    const int j = 4 * threadIdx.y + 64 * blockIdx.y;
-    //copy from input
-    #pragma unroll
-    for (int k = 0; k < 4; k++)
-        s_input[64*threadIdx.y + threadIdx.x + 1024*k] = input[i + n * (j+k)];
+    __shared__ float data[64][64+1];
+    
+    int i = blockIdx.x * 64 + threadIdx.x;
+    int j = blockIdx.y * 64 + threadIdx.y;
+  
+    data[threadIdx.y][threadIdx.x] = input[(j)*n + i];
+    data[threadIdx.y+16][threadIdx.x] = input[(j+16)*n + i];
+    data[threadIdx.y+32][threadIdx.x] = input[(j+32)*n + i];
+    data[threadIdx.y+48][threadIdx.x] = input[(j+48)*n + i];
+  
     __syncthreads();
-
-    //copy to output
-    #pragma unroll
-    for (int k = 0; k < 4; k++)
-        output[j+k + n * i] = s_input[64*threadIdx.y + threadIdx.x + 1024*k];
+  
+    i = blockIdx.y * 64 + threadIdx.x;  // transpose block offset
+    j = blockIdx.x * 64 + threadIdx.y;
+  
+    output[(j)*n + i] = data[threadIdx.x][threadIdx.y];
+    output[(j+16)*n + i] = data[threadIdx.x][threadIdx.y + 16];
+    output[(j+32)*n + i] = data[threadIdx.x][threadIdx.y + 32];
+    output[(j+48)*n + i] = data[threadIdx.x][threadIdx.y + 48];
 }
 
 void cudaTranspose(
