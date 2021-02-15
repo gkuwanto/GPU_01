@@ -65,6 +65,15 @@ void randomFill(float *fill, int size) {
     }
 }
 
+void printMatrix(float *input, int n) {
+    for (int i = 0; i<n;i++){
+        for(int j = 0; j<n; j++) {
+            fprintf(stderr, "%d", input[i*n +j]);
+        }
+        fprintf(stderr, "\n");
+    }
+}
+
 int main(int argc, char *argv[]) {
 
     // These functions allow you to select the least utilized GPU 
@@ -151,6 +160,8 @@ int main(int argc, char *argv[]) {
 
         // Initialize input data to random numbers in [0, 1]
         randomFill(input, n * n);
+
+        printMatrix(input);
 
         // Copy input to GPU
         gpuErrChk(cudaMemcpy(d_input, input, n * n * sizeof(float), 
