@@ -68,7 +68,7 @@ void shmemTransposeKernel(const float *input, float *output, int n) {
     i = 4 * threadIdx.y + 64 * blockIdx.x;
     j = threadIdx.x + 64 * blockIdx.y;
     for (int k = 0; k < 4; k++)
-        output[j + n * (i+k)] = s_input[64*threadIdx.y + threadIdx.x + 1024*k];
+        output[j + n * (i+k)] = s_input[64*threadIdx.x + threadIdx.y + 16*k];
 }
 
 __global__
