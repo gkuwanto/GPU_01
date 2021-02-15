@@ -54,21 +54,22 @@ void shmemTransposeKernel(const float *input, float *output, int n) {
     // padding). Again, comment on all sub-optimal accesses.
 
     // __shared__ float data[???];
-    __shared__ float tile[64][64]; // the number of thread's per block
-
-    int x = threadIdx.x + 64 * blockIdx.x;
-    int y = threadIdx.y + 64 * blockIdx.y;
-    //copy from input
-    for (int k = 0; k < 64; k+=16)
-        tile[threadIdx.y+k][threadIdx.x] = input[x + n * (y+k)];
+    __shared__ float tile[64][64+1];
+    
+    int x = blockIdx.x * 64 + threadIdx.x;
+    int y = blockIdx.y * 64 + threadIdx.y;
+    int width = gridDim.x * 64;
+  
+    for (int j = 0; j < 64; j += 16)
+       tile[threadIdx.y+j][threadIdx.x] = input[(y+j)*width + x];
+  
     __syncthreads();
-
-    //copy to output
-
-    x = threadIdx.y + 64 * blockIdx.x;
-    y = threadIdx.x + 64 * blockIdx.y;
-    for (int k = 0; k < 64; k+=16)
-        output[x + n * (y+k)] = tile[threadIdx.x][threadIdx.y + k];
+  
+    x = blockIdx.y * 64 + threadIdx.x;  // transpose block offset
+    y = blockIdx.x * 64 + threadIdx.y;
+  
+    for (int j = 0; j < 64; j += 16)
+       output[(y+j)*width + x] = tile[threadIdx.x][threadIdx.y + j];
 }
 
 __global__
