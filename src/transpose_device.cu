@@ -59,15 +59,17 @@ void shmemTransposeKernel(const float *input, float *output, int n) {
 
     const int i = threadIdx.x + 64 * blockIdx.x;
     const int j = 4 * threadIdx.y + 64 * blockIdx.y;
+    //copy from input
     for (int k = 0; k < 4; k++)
         s_input[64*threadIdx.x+threadIdx.y + 16*k] = input[i + n * (j+k)];
     __syncthreads();
 
-    
+    //transpose
     for (int k = 0; k < 4; k++)
         s_output[64*threadIdx.y + threadIdx.x + 1024*k] = s_input[64*threadIdx.x+threadIdx.y + 16*k];
     __syncthreads();
 
+    //copy to output
     for (int k = 0; k < 4; k++)
         output[j+k + n * i] = s_output[64*threadIdx.y + threadIdx.x + 1024*k];
 }
@@ -78,12 +80,27 @@ void optimalTransposeKernel(const float *input, float *output, int n) {
     // Use any optimization tricks discussed so far to improve performance.
     // Consider ILP and loop unrolling.
 
-    const int i = threadIdx.x + 64 * blockIdx.x;
-    int j = 4 * threadIdx.y + 64 * blockIdx.y;
-    const int end_j = j + 4;
+    __shared__ float s_input[64*65]; // the number of thread's per block
+    __shared__ float s_output[64*65];
 
-    for (; j < end_j; j++)
-        output[j + n * i] = input[i + n * j];
+    const int i = threadIdx.x + 64 * blockIdx.x;
+    const int j = 4 * threadIdx.y + 64 * blockIdx.y;
+    //copy from input
+    #pragma unroll
+    for (int k = 0; k < 4; k++)
+        s_input[64*threadIdx.x+threadIdx.y + 16*k] = input[i + n * (j+k)];
+    __syncthreads();
+
+    //transpose
+    #pragma unroll
+    for (int k = 0; k < 4; k++)
+        s_output[64*threadIdx.y + threadIdx.x + 1024*k] = s_input[64*threadIdx.x+threadIdx.y + 16*k];
+    __syncthreads();
+
+    //copy to output
+    #pragma unroll
+    for (int k = 0; k < 4; k++)
+        output[j+k + n * i] = s_output[64*threadIdx.y + threadIdx.x + 1024*k];
 }
 
 void cudaTranspose(
