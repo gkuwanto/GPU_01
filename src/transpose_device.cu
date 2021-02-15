@@ -54,13 +54,13 @@ void shmemTransposeKernel(const float *input, float *output, int n) {
     // padding). Again, comment on all sub-optimal accesses.
 
     // __shared__ float data[???];
-    __shared__ float s_input[64*65]; // the number of thread's per block
+    __shared__ float s_input[64][65]; // the number of thread's per block
 
     int i = threadIdx.x + 64 * blockIdx.x;
     int j = threadIdx.y + 64 * blockIdx.y;
     //copy from input
     for (int k = 0; k < 64; k+=16) //loops can be unrolled
-        s_input[64*(threadIdx.y+k) + threadIdx.x] = input[i + n * (j+k)];
+        s_input[(threadIdx.y+k)][threadIdx.x] = input[i + n * (j+k)];
     __syncthreads();
 
     // rearange index (transpose 64 by 64 block)
@@ -69,7 +69,7 @@ void shmemTransposeKernel(const float *input, float *output, int n) {
 
     //copy to output
     for (int k = 0; k < 64; k+=16) //loops can be unrolled
-        output[i + n * (j+k)] = s_input[64 * threadIdx.x + threadIdx.y+k];
+        output[i + n * (j+k)] = s_input[threadIdx.x][threadIdx.y+k];
     
 }
 
