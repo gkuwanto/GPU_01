@@ -61,7 +61,7 @@ void cpuTranspose(const float *input, float *output, int n) {
 void randomFill(float *fill, int size) {
     for (int i = 0; i < size; i++) {
         float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        fill[i] = i;
+        fill[i] = r;
     }
 }
 
