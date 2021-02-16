@@ -60,7 +60,7 @@ void shmemTransposeKernel(const float *input, float *output, int n) {
     int j = blockIdx.y * 64 + threadIdx.y;
   
     for (int k = 0; k < 64; k += 16)
-       s_input[64*(threadIdx.y+k)+threadIdx.x] = input[(j+k)*n + i];
+       s_input[64*threadIdx.x+threadIdx.y + k] = input[(j+k)*n + i];
   
     __syncthreads();
   
@@ -68,7 +68,7 @@ void shmemTransposeKernel(const float *input, float *output, int n) {
     j = blockIdx.x * 64 + threadIdx.y;
   
     for (int k = 0; k < 64; k += 16)
-       output[(j+k)*n + i] = s_input[64*threadIdx.x+threadIdx.y + k]; // memory bank will occur
+       output[(j+k)*n + i] = s_input[64*(threadIdx.y+k)+threadIdx.x]; // memory bank will occur
 }
 
 __global__
