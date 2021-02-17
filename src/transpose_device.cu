@@ -43,7 +43,9 @@ void naiveTransposeKernel(const float *input, float *output, int n) {
     
     // Can be unrolled by setting j constant and adding an iterator e.g. +0, +1, , +2, +3,
     for (; j < end_j; j++)
-        output[j + n * i] = input[i + n * j];//access to input can be changed to shared memory
+        //access to input can be changed to shared memory
+        //access to global memory can be coalesced
+        output[j + n * i] = input[i + n * j];
 }
 
 __global__
@@ -54,21 +56,24 @@ void shmemTransposeKernel(const float *input, float *output, int n) {
     // padding). Again, comment on all sub-optimal accesses.
 
     // __shared__ float data[???];
-    __shared__ float s_input[64*65];
+    
+    __shared__ float data[64*65]; //add padding to remove bank conflict
     
     int i = blockIdx.x * 64 + threadIdx.x;
     int j = blockIdx.y * 64 + threadIdx.y;
   
-    for (int k = 0; k < 64; k += 16)
-       s_input[64*threadIdx.x+threadIdx.y + k] = input[(j+k)*n + i];
+    for (int k = 0; k < 64*64; k += 16*64) //can be unrolled
+        data[64*threadIdx.y+k+threadIdx.x] = input[(j+k)*n + i]; 
   
     __syncthreads();
   
-    i = blockIdx.y * 64 + threadIdx.x;  // transpose block offset
+    //may have a way to use ILP
+    i = blockIdx.y * 64 + threadIdx.x;  
     j = blockIdx.x * 64 + threadIdx.y;
   
-    for (int k = 0; k < 64; k += 16)
-       output[(j+k)*n + i] = s_input[64*(threadIdx.y+k)+threadIdx.x]; // memory bank will occur
+    for (int k = 0; k < 64; k += 16) //can be unrolled
+       output[(j+k)*n + i] = data[64*threadIdx.x+threadIdx.y + k]; //bank conflict will occur
+    
 }
 
 __global__
@@ -76,12 +81,13 @@ void optimalTransposeKernel(const float *input, float *output, int n) {
     // TODO: This should be based off of your shmemTransposeKernel.
     // Use any optimization tricks discussed so far to improve performance.
     // Consider ILP and loop unrolling.
-
+    
     __shared__ float data[64][64+1];
     
     int i = blockIdx.x * 64 + threadIdx.x;
     int j = blockIdx.y * 64 + threadIdx.y;
   
+    //Suprisingly changing the read to 2d 
     data[threadIdx.y][threadIdx.x] = input[(j)*n + i];
     data[threadIdx.y+16][threadIdx.x] = input[(j+16)*n + i];
     data[threadIdx.y+32][threadIdx.x] = input[(j+32)*n + i];
